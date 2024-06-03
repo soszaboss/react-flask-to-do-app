@@ -15,5 +15,5 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-to-do-list-api/.venv
+.venv/
 to-do-list-api/.env
