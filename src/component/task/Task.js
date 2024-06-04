@@ -1,28 +1,53 @@
-import React, {Component} from 'react';
+import React, {Component, useState} from 'react';
 import Header from '../header/Header';
+import $ from 'jquery';
 import './Task.css';
 
-const data = {
-    id: 1,
-    title: 'Create theme',
-    description: 'Create theme with bootstrap',
-    date: '2021-01-01',
-}
 
 const ToDo = ({props})=>{
+    const [checked, setChecked] = useState(props.status)
+    const [title, setTitle] = useState(props.task)
+    const [description, setDescription] = useState(props.description)
+    const handleChange = () => {
+        if (setChecked) {
+            $(`#task-title-${props.id}`).addClass('text-decoration-line-through')
+            setChecked(!checked)
+        } else {
+            $(`#task-title-${props.id}`).removeClass('text-decoration-line-through')
+            setChecked(!checked)
+        }
+        console.log('checked')
+    }
+    const deleteTask = () =>{
+        console.log('remove')
+        $(`#task-${props.id}`).remove();
+    }
+
+    const updateTask = () =>{
+        $(`#modal-update-task-title-${props.id}`).val(title)
+        $(`#modal-update-description-${props.id}`).text(description)
+    }
+
+    const updateModal = () => {
+        const task = $(`#modal-update-task-title-${props.id}`).val()
+        const description = $(`#modal-update-description-${props.id}`).text()
+        setTitle(task)
+        setDescription(description)
+        $(`#modal-update-close-btn-${props.id}`).click()
+     }
     const modalId = `modal-update-${props.id}`;
     return (
-        <div className="todo-item row">
-            <div className="checker me-4 col-1"><span className=""><input type="checkbox" /></span></div>
+        <div className="todo-item row" id={`task-${props.id}`}>
+            <div className="checker me-4 col-1"><span className=""><input type="checkbox" onChange={handleChange} /></span></div>
             <div className='row col'>
                 <div className='col'>
-                    <span>{props.title}</span>
+                    <span className={checked ? 'text-decoration-line-through' : ''} id={`task-title-${props.id}`}>{title}</span>
                 </div>
                 <div className='col-5 row'>
                     <div className='col d-flex justify-content-evenly'>
-                        <a href='#' className='inline-block text-success' type='button' data-bs-toggle="modal" data-bs-target={`#${modalId}`}><i className="bi bi-pencil"></i>&nbsp;edit</a>
-                        <UpdateModal id={props.id} />
-                        <a href='#' className='inline-block text-danger'><i className="bi bi-trash3"></i>&nbsp;delete</a>
+                        <a href='#' className='inline-block text-success' type='button' data-bs-toggle="modal" data-bs-target={`#${modalId}`} onClick={updateTask}><i className="bi bi-pencil"></i>&nbsp;edit</a>
+                        <UpdateModal id={props.id} updatemodal={updateModal} />
+                        <a href='#' className='inline-block text-danger' onClick={deleteTask}><i className="bi bi-trash3"></i>&nbsp;delete</a>
                     </div>
                     <div className='col-3 d-flex justify-content-end align-items-center'>
                         <span className='d-inline-block fs-date text-secondary'>{props.date}</span>
@@ -54,7 +79,7 @@ const InsertModal = () => {
                                 <textarea className="form-control" placeholder="Leave your description here" id="description" rows={8} required={true} name='description' />
                             </div>
                             <div>
-                                <button className="btn btn-primary" type="submit">Submit</button>
+                                <button className="btn btn-primary" type="submit">Insert</button>
                             </div>
                         </form>
                     </div>
@@ -64,27 +89,33 @@ const InsertModal = () => {
     );
 }
 
-const UpdateModal = ({id}) => {
+const UpdateModal = ({id, updatemodal}) => {
+    const handleSubmitUpdate = ()=>{
+        $(`#modal-update-form-${id}`).on('submit' ,function(e){
+            e.preventDefault()
+            updatemodal()
+        })
+    }
     return (
             <div className="modal modal-lg fade" id={`modal-update-${id}`} data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby={`label-modal-update-${id}`} aria-hidden="true">
                 <div className="modal-dialog">
                     <div className="modal-content">
                     <div className="modal-header">
                         <h1 className="modal-title fs-5" id="staticBackdropLabel">Your Task</h1>
-                        <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" id={`modal-update-close-btn-${id}`} ></button>
                     </div>
                     <div className="modal-body">
-                        <form action="">
+                        <form action={updatemodal} id={`modal-update-form-${id}`}>
                             <div className="mb-3">
                                 <label for={`modal-update-task-${id}`} >Task</label>
-                                <input type="text" className="form-control" id={`modal-update-task-${id}`} required name='task' />
+                                <input type="text" className="form-control" id={`modal-update-task-title-${id}`} required name='task' />
                             </div>
                             <div className="mb-3">
                                 <label for={`modal-update-description-${id}`} >Description</label>
                                 <textarea className="form-control" placeholder="Leave your description here" id={`modal-update-description-${id}`} name='description' rows={8} required={true} />
                             </div>
                             <div>
-                                <button className="btn btn-primary" type="submit">Submit</button>
+                                <button className="btn btn-success" type="submit" onClick={handleSubmitUpdate}>Update</button>
                             </div>
                         </form>
                     </div>
@@ -96,6 +127,59 @@ const UpdateModal = ({id}) => {
 
 class Task extends Component{
     render(){
+        const data = [
+            {
+                id: 1,
+                task: 'Acheter des fleurs pour le jardin',
+                description: 'Choisissez des fleurs colorées pour égayer votre espace extérieur.',
+                date: '2024-06-04',
+                status: true
+            },
+            {
+                id: 2,
+                task: 'Réviser pour l examen de mathématiques',
+                description: 'Passez en revue les formules et les concepts clés.',
+                date: '2024-06-05',
+                status: false
+            },
+            {
+                id: 3,
+                task: 'Préparer un gâteau au chocolat',
+                description: 'Trouvez une recette délicieuse et mettez-vous aux fourneaux !',
+                date: '2024-06-06',
+                status: true
+            },
+            {
+                id: 4,
+                task: 'Faire une promenade au parc',
+                description: 'Profitez du beau temps et respirez l\'air frais.',
+                date: '2024-06-07',
+                status: false
+            },
+            {
+                id: 5,
+                task: 'Lire un livre',
+                description: 'Choisissez un livre qui vous passionne et plongez-vous dedans.',
+                date: '2024-06-08',
+                status: false
+            },
+            {
+                id: 6,
+                task: 'Nettoyer le garage',
+                description: 'Organisez vos affaires et jetez ce dont vous n\'avez plus besoin.',
+                date: '2024-06-09',
+                status: true
+            },
+            {
+                id: 7,
+                task: 'Apprendre une nouvelle chanson à la guitare',
+                description: 'Trouvez une partition et pratiquez jusqu\'à ce que vous la maîtrisiez.',
+                date: '2024-06-10',
+                status: false
+            }
+        ];
+        // const [tasks, setTasks] = useState(data)
+        
        return  (
             <div>
                 <Header />
@@ -119,24 +203,11 @@ class Task extends Component{
                                             <li role="presentation" className="nav-item completed-task"><a href="#" className="nav-link">Completed</a></li>
                                         </ul>
                                         <div className="todo-list">
-                                            <div className="todo-item row">
-                                                <div className="checker me-4 col-1"><span className=""><input type="checkbox" /></span></div>
-                                                <div className='row col'>
-                                                    <div className='col'>
-                                                        <span>Create theme</span>
-                                                    </div>
-                                                    <div className='col-5 row'>
-                                                        <div className='col d-flex justify-content-evenly'>
-                                                            <a href='#' className='inline-block text-success'><i class="bi bi-pencil"></i>&nbsp;edit</a>
-                                                            <a href='#' className='inline-block text-danger'><i class="bi bi-trash3"></i>&nbsp;delete</a>
-                                                        </div>
-                                                        <div className='col-2 d-flex justify-content-end align-items-center'>
-                                                            <span className='d-inline-block fs-date text-secondary'>yesterday</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <ToDo props={data}/>
+                                            {
+                                                data.map(el => (
+                                                    <ToDo key={el.id} props={el} />
+                                                ))
+                                            }
                                         </div>
                                     </div>
                                 </div>
