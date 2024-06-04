@@ -1,13 +1,13 @@
 import React from 'react';
 import './Header.css';
-import SearchBar from './search-bar/SearchBar'
+// import SearchBar from './search-bar/SearchBar'
 
 const NavBar = () => {
   return (
     <nav className="navbar bg-body-tertiary">
             <div className="container-fluid">
               <a className="navbar-brand fs-1 fw-bolder">To Do List</a>
-              <SearchBar />
+              {/* <SearchBar /> */}
             </div>
     </nav>
   );

@@ -98,3 +98,11 @@ div.button, div.checker, div.radio, div.selector, div.uploader {
 .fs-date{
     font-size: 12px;
 }
+
+.w-100-i{
+    max-width: 100% !important;
+}
+
+.popover{
+    background: #f7f7f7
+}
