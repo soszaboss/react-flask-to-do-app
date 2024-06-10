@@ -1,13 +1,10 @@
 import pymongo
+import contextlib
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 class MongodbClient:
-    def __init__(self, uri):
-        self.URL = uri
-        self.client = MongoClient(uri)
-
-    def close(self):
-        return self.client.close()
+    def __init__(self, client):
+        self.client = client
 
     def get_collection(self, db:str, collection_name:str):
         db = self.client.get_database(db)
@@ -16,7 +13,6 @@ class MongodbClient:
     def create_dbs(self, db_name:str):
         try:
             db = self.client[db_name]
-            self.close()
         except Exception as e:
                 raise Exception("The following error occurred: ", e)
         else:
@@ -26,16 +22,15 @@ class MongodbClient:
         try:
             db = self.client.get_database(db)
             db.create_collection(collection_name)
-            self.close()
         except Exception as e:
             raise Exception("The following error occurred: ", e)
         
-class Database(MongodbClient):
+class Insert(MongoClient):
+
     def insert_one(self, db, collection_name:str, doc:dict):
         try:
             collection = self.get_collection(db, collection_name)
             doc = collection.insert_one(doc)
-            self.close()
         except Exception as e:
             raise Exception("The following error occurred: ", e)
         else:
@@ -49,11 +44,13 @@ class Database(MongodbClient):
                 if typ != dict:
                     raise ValueError( f'collection has to be a list of dictionaries: {task}')
             data = collection.insert_many(docs)
-            self.close()
         except Exception as e:
             raise Exception("The following error occurred: ", e)
         else:
             return data.inserted_ids
+    
+        
+class Update(MongodbClient):
         
     def update_one(self, db, collection_name:str, query_filter:dict, update_operation:dict, upsert=False):
         try:
@@ -61,7 +58,6 @@ class Database(MongodbClient):
             if not query_filter and not update_operation:
                 raise ValueError('query filter and update operation cannot be empty')
             updated_data = collection.update_one(query_filter, update_operation, upsert=upsert)
-            self.close()
         except Exception as e:
             raise Exception("The following error occurred: ", e)
         else:
@@ -75,7 +71,6 @@ class Database(MongodbClient):
             if not query_filter and not update_operation:
                 raise ValueError('query filter and update operation cannot be empty')
             updated_data = collection.update_many(query_filter, update_operation, upsert=upsert)
-            self.close()
         except Exception as e:
             raise Exception("The following error occurred: ", e)
         else:
@@ -84,13 +79,15 @@ class Database(MongodbClient):
             else:
                 return updated_data.upserted_id
             
+
+class Delete(MongoClient):
+
     def delete_one(self, db, collection_name:str, query_filter:dict):
         try:
             collection = self.get_collection(db, collection_name)
             if not query_filter:
                 raise ValueError('query filter operation cannot be empty')
             deleted_data = collection.delete_one(query_filter)
-            self.close()
         except Exception as e:
             raise Exception("The following error occurred: ", e)
         else:
@@ -104,7 +101,6 @@ class Database(MongodbClient):
             object_id = ObjectId(id)
             filter = {'_id': object_id}
             deleted_data = collection.delete_one(filter)
-            self.close()
         except Exception as e:
             raise Exception("The following error occurred: ", e)
         else:
@@ -116,14 +112,14 @@ class Database(MongodbClient):
             # if not query_filter:
             #     raise ValueError('query filter operation cannot be empty')
             deleted_data = collection.delete_many(query_filter)
-            self.close()
         except Exception as e:
             raise Exception("The following error occurred: ", e)
         else:
             return deleted_data.raw_result
         
-       
-class FetchQuery(MongodbClient):
+    
+
+class Find(MongodbClient):
 
     def __init__(self, uri, param=None):
         self.param = param
@@ -173,7 +169,6 @@ class FetchQuery(MongodbClient):
     def find_and_sort(self, data:dict, db:str, collection_name:str):
         try:
             items = self.find(db=db, collection_name=collection_name).sort(data)
-            self.close()
         except Exception as e:
             raise Exception("The following error occurred: ", e)
         else:
@@ -182,7 +177,6 @@ class FetchQuery(MongodbClient):
     def find_and_limit(self, limit:int, db:str, collection_name:str):
         try:
             items = self.find(db=db, collection_name=collection_name).limit(limit)
-            self.close()
         except Exception as e:
             raise Exception("The following error occurred: ", e)
         else:
@@ -191,7 +185,6 @@ class FetchQuery(MongodbClient):
     def limit_and_sort(self, limit:int, data:dict, db:str, collection_name:str):
         try:
             items = self.find(db=db, collection_name=collection_name).sort(data).limit(limit)
-            self.close()
         except Exception as e:
             raise Exception("The following error occurred: ", e)
         else:
@@ -317,3 +310,23 @@ class FetchQuery(MongodbClient):
 # status = query.find(db='to_do_list', collection_name='status')
 # print(insert_to_do)
 # print(to_do)
+
+class MongoContextManager:
+    def init(self, url):
+        self.URL = url
+        self.CLIENT = None
+
+    def __enter__(self):
+        self.CLIENT = MongodbClient(self.URL)
+        return self.CLIENT
+    
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        return self.CLIENT.close()
+    
+@contextlib.contextmanager
+def MongoContextManagerDecorator(url:str):
+    client = MongodbClient(url)
+
+    yield
+
+    client.close()
